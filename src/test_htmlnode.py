@@ -1,6 +1,6 @@
 import unittest
 
-from htmlnode import HTMLNode, LeafNode
+from htmlnode import HTMLNode, LeafNode, ParentNode
 
 class TestHTMLNode(unittest.TestCase):
     def test_props_to_html_multiple_attributes(self):
@@ -46,6 +46,41 @@ class TestLeafNode(unittest.TestCase):
     
         self.assertEqual(node_with_no_tag.to_html(), "Plain Text")
 
+class TestParentNode(unittest.TestCase):
+
+    def test_missing_tag(self):
+        with self.assertRaises(ValueError) as context:
+            node = ParentNode("", [LeafNode("b", "Bold text")])
+            node.to_html()
+        self.assertEqual(str(context.exception), "Invalid Tag")
+
+    def test_no_children(self):
+        with self.assertRaises(ValueError) as context:
+            node = ParentNode("div", [])
+            node.to_html()
+        self.assertEqual(str(context.exception), "Invalid Children")
+
+    def test_single_leaf_child(self):
+        node = ParentNode("p", [LeafNode("b", "Bold text")], props={})
+        result = node.to_html()
+        expected = "<p><b>Bold text</b></p>"
+        self.assertEqual(result, expected)
+
+    def test_multiple_leaf_children(self):
+        node = ParentNode("p", [
+            LeafNode("b", "Bold text"),
+            LeafNode(None, "Normal text"),
+        ])
+        result = node.to_html()
+        expected = "<p><b>Bold text</b>Normal text</p>"
+        self.assertEqual(result, expected)
+
+    def test_nested_parent_nodes(self):
+        child_node = ParentNode("span", [LeafNode(None, "Nested text")])
+        parent_node = ParentNode("div", [LeafNode("b", "Bold text"), child_node])
+        result = parent_node.to_html()
+        expected = "<div><b>Bold text</b><span>Nested text</span></div>"
+        self.assertEqual(result, expected)
 
 if __name__ == "__main__":
     unittest.main()
